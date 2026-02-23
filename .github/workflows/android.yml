@@ -1,4 +1,4 @@
-name: Get SHA1 Fast
+name: Abu Zahra Final Build 3.9.60
 
 on:
   push:
@@ -6,23 +6,44 @@ on:
   workflow_dispatch:
 
 jobs:
-  extract-sha1:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: 🔥 Generate and Show SHA1
+      - name: Install & Sync
+        run: |
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
+          npx cap add android || true
+          
+          # تعديل رقم الإصدار في ملفات الأندرويد
+          sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
+          
+          npx cap sync android
+
+      - name: Create Keystore
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          echo "------------------------------------------------------------"
-          echo "YOUR SHA-1 KEY IS BELOW:"
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1
-          echo "------------------------------------------------------------"
+
+      - name: Build Final APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew clean
+          ./gradlew assembleDebug
+
+      - name: Upload Final APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Abu-Zahra-v3.9.60-SUCCESS
+          path: android/app/build/outputs/apk/debug/app-debug.apk
