@@ -17,26 +17,31 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Build APK
+      - name: Build APK (The Final Fix)
         run: |
           cd public
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # 1. إنشاء الملف الذي تسبب في الخطأ في الصورة 37
-          echo "{}" > twa-manifest.json 
+          # إزالة أي إعدادات قديمة تعيق العمل
+          rm -f twa-manifest.json
           
-          # 2. بناء التطبيق مع تخطي كل الأسئلة
+          # إجبار الأداة على إنشاء ملف الإعدادات والرد بـ Yes على كل شيء
+          # هذا السطر هو مفتاح الحل لكل الصور السابقة
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
+          
+          # أمر البناء مع إجبارية تخطي كلمة السر
           yes | bubblewrap build --no-prompt || true
           
-          # 3. صيد الملف: ابحث عن أي ملف ينتهي بـ .apk وانقله للواجهة
-          find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
+          # الآن سنقوم بـ "مسح ذري" للمجلدات لإيجاد أي ملف apk
+          echo "Looking for the generated file..."
+          find . -name "*.apk" -exec cp {} ../AbuZahra_Final_App.apk \;
+          cd ..
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-App
-          # المسار الذي نقلنا إليه الملف في الخطوة السابقة
-          path: AbuZahra_Final.apk
+          name: AbuZahra-App-Package
+          # المسار الذي نقلنا إليه الملف يدوياً
+          path: AbuZahra_Final_App.apk
           if-no-files-found: error
 
