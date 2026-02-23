@@ -1,4 +1,4 @@
-name: Abu Zahra Final Build 3.9.60
+name: Abu Zahra Final Fix v3.9.60
 
 on:
   push:
@@ -18,17 +18,17 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Install & Sync
+      - name: Install & Fix Dependencies
         run: |
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
-          echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
-          npx cap add android || true
+          npx cap sync android
           
-          # تعديل رقم الإصدار في ملفات الأندرويد
+          # هذا الأمر يحل مشكلة تكرار مكتبات Kotlin (Duplicate Class)
+          echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10' } }" >> android/build.gradle
+          
+          # ضبط رقم الإصدار 3.9.60
           sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
           sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
-          
-          npx cap sync android
 
       - name: Create Keystore
         run: |
@@ -40,10 +40,10 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew clean
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Final APK
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v3.9.60-SUCCESS
+          name: Abu-Zahra-v3.9.60-FINAL
           path: android/app/build/outputs/apk/debug/app-debug.apk
