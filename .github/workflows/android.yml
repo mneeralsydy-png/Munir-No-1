@@ -1,4 +1,4 @@
-name: Abu Zahra SHA1 Fix
+name: Abu Zahra Final Build
 
 on:
   push:
@@ -26,8 +26,10 @@ jobs:
 
       - name: Build APK
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android --force
-          npx cap add android || true
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          # إنشاء ملف الإعدادات لإصلاح خطأ Missing appId
+          echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
+          npx cap add android
           npx cap sync android
           cd android && chmod +x gradlew && ./gradlew assembleDebug
 
