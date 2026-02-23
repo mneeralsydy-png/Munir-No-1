@@ -1,4 +1,4 @@
-name: Abu Zahra App Final Victory
+name: Abu Zahra App - Full Permissions Victory
 
 on:
   push:
@@ -24,23 +24,37 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Fix Permissions
+      - name: Build & Inject All Permissions
         run: |
-          # 1. تثبيت الأدوات اللازمة
           npm install @capacitor/cli @capacitor/core @capacitor/android --force
-          
-          # 2. تهيئة التطبيق مع تحديد الهوية (appId) والاسم (appName) والمسار (webDir)
-          # حل مشكلة الخطأ في الصورة 22
           npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public
-          
-          # 3. إضافة منصة أندرويد
           npx cap add android
           
-          # 4. تحديث الصلاحيات للإنترنت
+          # --- إضافة جميع الأذونات الممكنة للهاتف ---
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+              
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+              
+              <uses-permission android:name="android.permission.READ_CONTACTS" />
+              <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+              <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+              
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -49,7 +63,8 @@ jobs:
                   android:theme="@style/AppTheme">
                   <activity
                       android:name="com.munir.abuzahra.MainActivity"
-                      android:exported="true">
+                      android:exported="true"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -67,9 +82,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload Working APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Final-Success
+          name: Abu-Zahra-Full-Permissions
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
