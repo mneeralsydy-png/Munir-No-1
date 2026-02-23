@@ -1,42 +1,82 @@
-name: Build Android APK
-on: [push]
+name: Abu Zahra App Final Victory
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Java 21 (Fix for Image 27)
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: 'zulu'
+          java-version: '21' # تم التحديث لـ 21 لحل خطأ invalid source release
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Build APK
+      - name: Build & Fix Permissions
         run: |
-          # الدخول لمجلد بوبليك حيث يوجد ملف المانيفست
-          cd public
-          export JAVA_HOME=$JAVA_HOME_17_X64
+          # تنظيف كامل للمخلفات
+          rm -rf android package.json
+          echo '{"name":"app","version":"1.0.0","dependencies":{"@capacitor/cli":"latest","@capacitor/core":"latest","@capacitor/android":"latest"}}' > package.json
+          npm install --force
           
-          # إنشاء ملف الإعدادات المفقود آلياً لتجنب خطأ ENOENT
-          echo "{}" > twa-manifest.json
+          # تهيئة أندرويد من جديد
+          npx cap init Abu-Zahra com.example.abuzahra --web-dir www || true
+          npx cap add android
           
-          # بناء التطبيق مع تجاوز كل الأسئلة آلياً
-          yes | bubblewrap init --manifest=manifest.json --no-prompt || true
-          yes | bubblewrap build --no-prompt || true
+          # --- تفعيل الإنترنت والأذونات الحقيقية (لجعل الاتصال يعمل) ---
+          cat <<EOF > android/app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.READ_CONTACTS" />
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="Abu Zahra"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:supportsRtl="true"
+                  android:usesCleartextTraffic="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+                      android:name="com.example.abuzahra.MainActivity"
+                      android:label="Abu Zahra"
+                      android:theme="@style/AppTheme.NoActionBarLaunch"
+                      android:launchMode="singleTop"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
           
-          # صيد ملف الـ APK ونقله للخارج ليراه نظام الرفع
-          find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
+          npx cap sync android
 
-      - name: Upload APK
+      - name: Build Final APK
+        run: |
+          cd android
+          chmod +x gradlew
+          # التأكد من استخدام جافا 21 في عملية البناء
+          ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME_21_X64
+
+      - name: Upload Working APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-Final-App
-          path: AbuZahra_Final.apk
-          if-no-files-found: error
-          
+          name: Abu-Zahra-Final-Success
+          path: android/app/build/outputs/apk/debug/app-debug.apk
