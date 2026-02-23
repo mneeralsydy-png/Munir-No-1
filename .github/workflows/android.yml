@@ -1,4 +1,4 @@
-name: Abu Zahra App - Full Permissions Victory
+name: Abu Zahra App - Smart Permissions Victory
 
 on:
   push:
@@ -24,36 +24,30 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Inject All Permissions
+      - name: Build & Smart Permissions
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android --force
-          npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public
-          npx cap add android
+          # 1. تثبيت الإضافات (الأسماء + الهاتف + الرسائل)
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           
-          # --- إضافة جميع الأذونات الممكنة للهاتف ---
+          # 2. تهيئة المشروع
+          npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public --no-confirm || true
+          
+          # 3. إضافة منصة أندرويد
+          npx cap add android || true
+          
+          # 4. تعديل المانيفست ليكون "عند الطلب" فقط
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-              
-              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              
-              <uses-permission android:name="android.permission.CAMERA" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-              
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-              
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-              <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-              
-              <uses-permission android:name="android.permission.VIBRATE" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.CALL_PHONE" />
+              <uses-permission android:name="android.permission.SEND_SMS" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              <uses-permission android:name="android.permission.CAMERA" />
 
               <application
                   android:allowBackup="true"
@@ -74,6 +68,7 @@ jobs:
           </manifest>
           EOF
           
+          # مزامنة الجسور البرمجية
           npx cap sync android
 
       - name: Build Final APK
@@ -82,9 +77,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload Smart APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Full-Permissions
+          name: Abu-Zahra-Smart-Victory
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
