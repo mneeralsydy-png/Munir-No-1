@@ -19,17 +19,18 @@ jobs:
 
       - name: Build APK
         run: |
-          # الدخول لمجلد بوبليك حيث يوجد الكود
-          cd public 
+          # الدخول لمجلد بوبليك وبدء البناء
+          cd public
           bubblewrap init --manifest=manifest.json --no-prompt
           bubblewrap build --no-prompt
-        continue-on-error: true
+          # أمر سحري: نقل أي ملف apk تم إنتاجه إلى المجلد الرئيسي ليسهل رفعه
+          find . -name "*.apk" -exec cp {} .. \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AbuZahra-Final-App
-          # البحث داخل مجلد public تحديداً
-          path: "public/**/*.apk" 
+          # الآن سيبحث في المجلد الرئيسي مباشرة عن الملف الذي نقلناه
+          path: "*.apk" 
           if-no-files-found: error
           
