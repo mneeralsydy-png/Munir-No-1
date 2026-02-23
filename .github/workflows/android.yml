@@ -1,4 +1,4 @@
-name: Abu Zahra Final Fix v3.9.60
+name: Abu Zahra Clean Build v3.9.60
 
 on:
   push:
@@ -18,22 +18,25 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Install & Add Platform
+      - name: Install Dependencies
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
-          # إنشاء ملف الإعدادات أولاً
+          npm install @capacitor/cli @capacitor/core @capacitor/android --force
+          # إنشاء ملف الإعدادات
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
-          # إضافة منصة الأندرويد قبل أي شيء آخر
           npx cap add android || true
           
-      - name: Fix Dependencies & Sync
+      - name: Force Fix Kotlin Duplicate
         run: |
-          # الآن نقوم بإصلاح تكرار المكتبات داخل مجلد الأندرويد الذي تم إنشاؤه
-          echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10' } }" >> android/build.gradle
-          
-          # ضبط رقم الإصدار 3.9.60
-          sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
+          # إضافة إعدادات مباشرة في ملف gradle الخاص بالمشروع لحل مشكلة التكرار
+          echo "subprojects {
+              project.configurations.all {
+                  resolutionStrategy.eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin') {
+                          details.useVersion '1.9.10'
+                      }
+                  }
+              }
+          }" >> android/build.gradle
           
           npx cap sync android
 
@@ -42,15 +45,14 @@ jobs:
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build Final APK
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Finished APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v3.9.60-FINAL
+          name: Abu-Zahra-v3.9.60-Final-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
