@@ -1,40 +1,52 @@
 name: Build Android APK
-on: [push]
+
+on:
+  push:
+    branches: [ "main", "master" ] # يعمل عند كل رفع للكود
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. استدعاء الكود من الريبلت
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # 2. إعداد جافا (Required for Android)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3. تثبيت Bubblewrap (أداة Google للتحويل)
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
+      # 4. بناء التطبيق (الخطوة الذكية)
       - name: Build APK
         run: |
-          cd public
-          # تحديد مسار الجافا يدوياً للأداة لتجنب السؤال التفاعلي
-          export JAVA_HOME=$JAVA_HOME_17_X64
-          # الرد آلياً بـ "نعم" على اتفاقية الاستخدام وبناء التطبيق
-          echo "y" | bubblewrap init --manifest=manifest.json --no-prompt || true
-          echo "y" | bubblewrap build --no-prompt || true
+          #Bubblewrap يحتاج مساراً كاملاً للـ manifest.html يولده تلقائياً، لكننا نستخدم manifest.json المعد مسبقاً
           
-          # التأكد من وجود الملف ونقله لمكان ثابت
-          mkdir -p ../output
-          find . -name "*.apk" -exec cp {} ../output/app-release.apk \;
+          # التأكد من وجود مجلد لتخزين الملفات المؤقتة
+          mkdir -p bubblewrap_temp
+          cd bubblewrap_temp
+          
+          # تحويل الملف وإضافة الرابط المباشر للريبلت (هنا يكمن السر لربط العقل بالواجهة)
+          # استبدل YOUR_REPL_LINK برابطك الحقيقي
+          bubblewrap init --manifest=../manifest.json --url=https://projectname.repl.co --no-prompt || true
+          
+          # بناء الـ APK
+          bubblewrap build || true
+          
+          # نقل الملف الناتج للمجلد الرئيسي ليتم رفعه
+          mv app-release-signed.apk ../AbuZahra_Final.apk
+          cd ..
 
+      # 5. رفع الملف الناتج كـ Artifact (ستجده في النتيجة كملف قابل للتحميل)
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-Final-App
-          # المسار الجديد الذي ضمنا نقل الملف إليه
-          path: output/app-release.apk
+          name: Abu-Zahra-Android-App
+          path: AbuZahra_Final.apk
           if-no-files-found: error
-          
