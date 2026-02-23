@@ -2,7 +2,7 @@ name: Abu Zahra App Final Victory
 
 on:
   push:
-    branches: [ "main", "Push" ] # أضفنا Push لضمان العمل على فرعك الحالي
+    branches: [ "main", "Push" ]
   workflow_dispatch:
 
 jobs:
@@ -26,23 +26,21 @@ jobs:
 
       - name: Build & Fix Permissions
         run: |
-          # تنظيف وبناء بيئة Capacitor
+          # 1. تثبيت الأدوات اللازمة
           npm install @capacitor/cli @capacitor/core @capacitor/android --force
           
-          # تهيئة التطبيق (استخدمنا public بدلاً من www)
-          npx cap init Abu-Zahra com.example.abuzahra --web-dir public --no-confirm || true
+          # 2. تهيئة التطبيق مع تحديد الهوية (appId) والاسم (appName) والمسار (webDir)
+          # حل مشكلة الخطأ في الصورة 22
+          npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public
           
-          # إضافة منصة أندرويد (وإصلاحها إذا كانت موجودة)
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+          # 3. إضافة منصة أندرويد
+          npx cap add android
           
-          # تحديث ملف المانيفست (كما في فكرتك العبقرية لتفعيل الإنترنت)
+          # 4. تحديث الصلاحيات للإنترنت
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -50,7 +48,7 @@ jobs:
                   android:usesCleartextTraffic="true"
                   android:theme="@style/AppTheme">
                   <activity
-                      android:name="com.example.abuzahra.MainActivity"
+                      android:name="com.munir.abuzahra.MainActivity"
                       android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -74,4 +72,4 @@ jobs:
         with:
           name: Abu-Zahra-Final-Success
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          
+
