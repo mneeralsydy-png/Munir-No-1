@@ -17,31 +17,26 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Build APK (The Final Fix)
+      - name: Build APK
         run: |
+          # الدخول لمجلد بوبليك حيث يوجد ملف المانيفست
           cd public
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # إزالة أي إعدادات قديمة تعيق العمل
-          rm -f twa-manifest.json
+          # إنشاء ملف الإعدادات المفقود آلياً لتجنب خطأ ENOENT
+          echo "{}" > twa-manifest.json
           
-          # إجبار الأداة على إنشاء ملف الإعدادات والرد بـ Yes على كل شيء
-          # هذا السطر هو مفتاح الحل لكل الصور السابقة
+          # بناء التطبيق مع تجاوز كل الأسئلة آلياً
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
-          
-          # أمر البناء مع إجبارية تخطي كلمة السر
           yes | bubblewrap build --no-prompt || true
           
-          # الآن سنقوم بـ "مسح ذري" للمجلدات لإيجاد أي ملف apk
-          echo "Looking for the generated file..."
-          find . -name "*.apk" -exec cp {} ../AbuZahra_Final_App.apk \;
-          cd ..
+          # صيد ملف الـ APK ونقله للخارج ليراه نظام الرفع
+          find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-App-Package
-          # المسار الذي نقلنا إليه الملف يدوياً
-          path: AbuZahra_Final_App.apk
+          name: AbuZahra-Final-App
+          path: AbuZahra_Final.apk
           if-no-files-found: error
-
+          
