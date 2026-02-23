@@ -1,8 +1,5 @@
 name: Build Android APK
-
-on:
-  push:
-    branches: [ "main", "master", "Push" ] # أضفنا Push لأن هذا اسم فرعك في الصور
+on: [push]
 
 jobs:
   build:
@@ -22,26 +19,24 @@ jobs:
 
       - name: Build APK
         run: |
-          # الدخول للمجلد الذي يحتوي على ملفاتك (public)
           cd public
-          
-          # إعداد متغيرات الجافا لتجنب الأسئلة
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # تنفيذ الأمر مع تجاوز الأسئلة وتوليد مفتاح وهمي للبناء السريع
-          yes | bubblewrap init --manifest=manifest.json --no-prompt || true
+          # 1. إنشاء الملف الذي تسبب في الخطأ في الصورة 37
+          echo "{}" > twa-manifest.json 
           
-          # بناء التطبيق (استخدام حيلة الـ yes لتخطي كلمات السر)
+          # 2. بناء التطبيق مع تخطي كل الأسئلة
+          yes | bubblewrap init --manifest=manifest.json --no-prompt || true
           yes | bubblewrap build --no-prompt || true
           
-          # البحث عن أي ملف apk تم إنتاجه ونقله للخارج باسم واضح
+          # 3. صيد الملف: ابحث عن أي ملف ينتهي بـ .apk وانقله للواجهة
           find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
-          cd ..
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Android-App
+          name: Abu-Zahra-App
+          # المسار الذي نقلنا إليه الملف في الخطوة السابقة
           path: AbuZahra_Final.apk
           if-no-files-found: error
-
+          
