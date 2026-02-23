@@ -19,16 +19,20 @@ jobs:
 
       - name: Build APK
         run: |
-          # الدخول لمجلد بوبليك وتجاوز كل الأسئلة بكلمة yes
           cd public
+          # الرد آلياً على كل الأسئلة بـ نعم (yes)
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
           yes | bubblewrap build --no-prompt || true
-          # البحث عن الملف ونقله للمكان الصحيح للرفع
-          find . -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/app-release.apk \;
+          
+          # أهم خطوة: البحث عن أي ملف APK في كل المجلدات ونقله للواجهة
+          echo "Searching for APK files..."
+          find . -name "*.apk" -exec cp {} ../AbuZahra_App.apk \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-Final-App
-          path: app-release.apk
-          
+          name: Final-Android-App
+          # سنرفع الملف الذي قمنا بصيده وتغيير اسمه
+          path: AbuZahra_App.apk
+          if-no-files-found: error
+
