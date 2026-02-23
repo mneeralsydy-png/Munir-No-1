@@ -1,88 +1,112 @@
-name: Abu Zahra App - Version 3.9.60 Ultimate Fix
+Skip to content
+mneeralsydy-png
+Munir-No-1
+Repository navigation
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+1
+ (1)
+Insights
+Settings
+Abu Zahra App - Version 3.9.60 Ultimate Fix
+Update android.yml #32
+All jobs
+Run details
+build
+succeeded 19 minutes ago in 3m 4s
+SHA1
+1s
+1s
+0s
+6s
+8s
+1m 18s
+1m 26s
+> Task :capacitor-android:bundleDebugAar
+> Task :capacitor-android:assembleDebug
+> Task :capacitor-community-contacts:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-community-contacts:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-community-contacts:extractDebugAnnotations
+> Task :capacitor-community-contacts:extractDeepLinksForAarDebug
+> Task :capacitor-community-contacts:mergeDebugGeneratedProguardFiles
+> Task :capacitor-community-contacts:mergeDebugConsumerProguardFiles
+> Task :capacitor-community-contacts:prepareDebugArtProfile
+> Task :capacitor-community-contacts:prepareLintJarForPublish
+> Task :capacitor-community-contacts:mergeDebugJavaResource
+> Task :capacitor-cordova-android-plugins:checkDebugAarMetadata
+> Task :capacitor-community-contacts:syncDebugLibJars
+> Task :capacitor-community-contacts:bundleDebugAar
+> Task :capacitor-community-contacts:assembleDebug
+> Task :capacitor-cordova-android-plugins:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-cordova-android-plugins:extractDebugAnnotations
+> Task :capacitor-cordova-android-plugins:extractDeepLinksForAarDebug
+> Task :capacitor-cordova-android-plugins:mergeDebugGeneratedProguardFiles
+> Task :capacitor-cordova-android-plugins:mergeDebugConsumerProguardFiles
+> Task :capacitor-cordova-android-plugins:prepareDebugArtProfile
+> Task :capacitor-cordova-android-plugins:prepareLintJarForPublish
+> Task :capacitor-cordova-android-plugins:mergeDebugJavaResource
+> Task :capacitor-cordova-android-plugins:syncDebugLibJars
+> Task :capacitor-cordova-android-plugins:bundleDebugAar
+> Task :capacitor-cordova-android-plugins:assembleDebug
 
-on:
-  push:
-    branches: [ "main", "Push" ]
-  workflow_dispatch:
+[Incubating] Problems report is available at: file:///home/runner/work/Munir-No-1/Munir-No-1/android/build/reports/problems/problems-report.html
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-
-      - name: Clean & Build Capacitor
-        run: |
-          # 1. تثبيت نظيف للأدوات
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
-          
-          # 2. إنشاء ملف الإعدادات يدوياً (لحل خطأ Missing appId)
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "com.munir.abuzahra",
-            "appName": "Abu Zahra",
-            "webDir": "public"
-          }
-          EOF
-
-          # 3. بناء الأندرويد من الصفر
-          rm -rf android
-          npx cap add android
-          
-          # 4. حقن المانيفست (حل الأذونات والرجوع من جوجل)
-          cat <<EOF > android/app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_CONTACTS" />
-              <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.CALL_PHONE" />
-              <uses-permission android:name="android.permission.INTERNET" />
-              <application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="Abu Zahra" android:theme="@style/AppTheme">
-                  <activity android:name="com.munir.abuzahra.MainActivity" android:exported="true" android:launchMode="singleTask" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-                      <intent-filter android:autoVerify="true">
-                          <action android:name="android.intent.action.VIEW" />
-                          <category android:name="android.intent.category.DEFAULT" />
-                          <category android:name="android.intent.category.BROWSABLE" />
-                          <data android:scheme="com.munir.abuzahra" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-
-          # 5. ضبط رقم الإصدار 3.9.60
-          sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
-          
-          npx cap sync android
-
-      - name: 🔥 Extract SHA-1 (VERY IMPORTANT)
-        run: |
-          cd android && ./gradlew signingReport
-
-      - name: Build Final APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Abu-Zahra-v3.9.60
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+BUILD SUCCESSFUL in 1m 26s
+123 actionable tasks: 123 executed
+1s
+Run actions/upload-artifact@v4
+  with:
+    name: Abu-Zahra-v3.9.60
+    path: android/app/build/outputs/apk/debug/app-debug.apk
+    if-no-files-found: warn
+    compression-level: 6
+    overwrite: false
+    include-hidden-files: false
+  env:
+    JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/21.0.10-7/x64
+    JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Zulu_jdk/21.0.10-7/x64
+With the provided path, there will be 1 file uploaded
+Artifact name is valid!
+Root directory input is valid!
+Beginning upload of artifact content to blob storage
+Uploaded bytes 3783938
+Finished uploading artifact content to blob storage!
+SHA256 digest of uploaded artifact zip is 9edb465b3acdf8bfbc0411039c5e4259dd4f20113da3a91dd5be6eb258315f9c
+Finalizing artifact upload
+Artifact Abu-Zahra-v3.9.60.zip successfully finalized. Artifact ID 5625646019
+Artifact Abu-Zahra-v3.9.60 has been successfully uploaded! Final size is 3783938 bytes. Artifact ID is 5625646019
+Artifact download URL: https://github.com/mneeralsydy-png/Munir-No-1/actions/runs/22327460721/artifacts/5625646019
+1s
+Post job cleanup.
+0s
+Post job cleanup.
+0s
+Post job cleanup.
+/usr/bin/git version
+git version 2.52.0
+Temporarily overriding HOME='/home/runner/work/_temp/c3d681e1-52e5-4a6f-92d8-972209cac939' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+/usr/bin/git config --global --add safe.directory /home/runner/work/Munir-No-1/Munir-No-1
+/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+0s
+Cleaning up orphan processes
+Terminate orphan process: pid (2429) (java)
