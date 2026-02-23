@@ -18,17 +18,24 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Install & Fix Dependencies
+      - name: Install & Add Platform
         run: |
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
-          npx cap sync android
+          # إنشاء ملف الإعدادات أولاً
+          echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
+          # إضافة منصة الأندرويد قبل أي شيء آخر
+          npx cap add android || true
           
-          # هذا الأمر يحل مشكلة تكرار مكتبات Kotlin (Duplicate Class)
+      - name: Fix Dependencies & Sync
+        run: |
+          # الآن نقوم بإصلاح تكرار المكتبات داخل مجلد الأندرويد الذي تم إنشاؤه
           echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10' } }" >> android/build.gradle
           
           # ضبط رقم الإصدار 3.9.60
           sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
           sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
+          
+          npx cap sync android
 
       - name: Create Keystore
         run: |
