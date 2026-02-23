@@ -1,4 +1,4 @@
-name: Abu Zahra App - Comprehensive Victory Fix
+name: Abu Zahra App - Version 3.9.60 Victory
 
 on:
   push:
@@ -24,36 +24,33 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Absolute Fix
+      - name: Build & Set Version 3.9.60
         run: |
-          # 1. تثبيت الأدوات والجسور (الأسماء + تسجيل الدخول)
+          # 1. تثبيت الإضافات والجسور
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           
-          # 2. إنشاء ملف الإعدادات يدوياً لمنع خطأ Missing appId (حل مشكلة صورة 30)
+          # 2. إنشاء ملف الإعدادات مع الهوية الصحيحة
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.munir.abuzahra",
             "appName": "Abu Zahra",
-            "webDir": "public",
-            "bundledWebRuntime": false
+            "webDir": "public"
           }
           EOF
 
-          # 3. إضافة منصة أندرويد بدون أوامر إضافية مسببة للأخطاء
+          # 3. بناء منصة أندرويد
           npx cap add android || true
           
-          # 4. حقن المانيفست المطور (حل الأسماء + الميكروفون + شاشة جوجل البيضاء)
+          # 4. حقن المانيفست المطور (الأذونات + حل شاشة جوجل البيضاء)
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-              <uses-permission android:name="android.permission.CALL_PHONE" />
-              <uses-permission android:name="android.permission.SEND_SMS" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              <uses-permission android:name="android.permission.CALL_PHONE" />
               <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.CAMERA" />
 
               <application
                   android:allowBackup="true"
@@ -83,8 +80,11 @@ jobs:
               </application>
           </manifest>
           EOF
+
+          # 5. تحديث رقم الإصدار إلى 3.9.60 برمجياً داخل ملف build.gradle
+          sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
           
-          # 5. مزامنة نهائية لربط الأذونات برمجياً
           npx cap sync android
 
       - name: Build Final APK
@@ -93,8 +93,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload Success APK
+      - name: Upload APK 3.9.60
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Final-Success
+          name: Abu-Zahra-v3.9.60
           path: android/app/build/outputs/apk/debug/app-debug.apk
