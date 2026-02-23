@@ -1,4 +1,4 @@
-name: Abu Zahra App - Final Smart Victory
+name: Abu Zahra App - Ultimate Final Victory
 
 on:
   push:
@@ -24,19 +24,18 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Fix All Issues
+      - name: Build & Deploy Bridge
         run: |
-          # 1. تثبيت الإضافات وجسر الأسماء (لحل مشكلة الصورة 26)
+          # 1. تثبيت الأدوات وجسر الأسماء
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           
-          # 2. تهيئة التطبيق مع تحديد الهوية والاسم (لحل مشكلة الصورة 22)
-          npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public --no-confirm || true
+          # 2. تهيئة التطبيق (بدون خيار no-confirm المسبب للخطأ)
+          npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public
           
-          # 3. إضافة منصة أندرويد وتحديث الجسور
-          npx cap add android || true
-          npx cap sync android
+          # 3. إضافة منصة أندرويد بشكل نظيف
+          npx cap add android
           
-          # 4. حقن الأذونات "عند الطلب" فقط (لحل مشكلة استمرار الميكروفون)
+          # 4. حقن الأذونات الذكية في المانيفست
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -47,7 +46,6 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               <uses-permission android:name="android.permission.CAMERA" />
 
               <application
@@ -69,7 +67,7 @@ jobs:
           </manifest>
           EOF
           
-          # مزامنة نهائية لربط جسر الأسماء بالجافا
+          # 5. مزامنة نهائية لربط كل شيء
           npx cap sync android
 
       - name: Build Final APK
@@ -78,9 +76,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload Success APK
+      - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Smart-App
+          name: Abu-Zahra-Final-Victory
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
