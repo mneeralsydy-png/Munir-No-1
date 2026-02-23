@@ -1,13 +1,13 @@
 {
   "name": "Abu Zahra App",
   "short_name": "AbuZahra",
-  "start_url": "./index.html",
+  "start_url": "https://munir-no-1.mneeralsydy-png.repl.co",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://replit.com/badge",
+      "src": "generated-icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
