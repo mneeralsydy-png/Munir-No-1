@@ -22,21 +22,21 @@ jobs:
           cd public
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # خطوة هامة: إنشاء ملف الإعدادات المفقود آلياً لتجنب الخطأ الظاهر في صورتك
+          # 1. إنشاء الملف الذي تسبب في الخطأ في الصورة 37
           echo "{}" > twa-manifest.json 
           
-          # الرد بـ "yes" على كل شيء وتجاوز الأسئلة
+          # 2. بناء التطبيق مع تخطي كل الأسئلة
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
           yes | bubblewrap build --no-prompt || true
           
-          # صيد ملف الـ APK ورفعه للمستوى الأعلى
-          find . -name "*.apk" -exec mv {} ../AbuZahra_App.apk \;
-          cd ..
+          # 3. صيد الملف: ابحث عن أي ملف ينتهي بـ .apk وانقله للواجهة
+          find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-Final-App
-          path: AbuZahra_App.apk
+          name: Abu-Zahra-App
+          # المسار الذي نقلنا إليه الملف في الخطوة السابقة
+          path: AbuZahra_Final.apk
           if-no-files-found: error
-
+          
