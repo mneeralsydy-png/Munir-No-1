@@ -20,19 +20,19 @@ jobs:
       - name: Build APK
         run: |
           cd public
-          # الرد آلياً على كل الأسئلة بـ نعم (yes)
+          # أمر القوة: الرد بـ "Y" (نعم) على كل الأسئلة وتحديد مسار الـ JDK يدوياً
+          export JAVA_HOME=$JAVA_HOME_17_X64
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
           yes | bubblewrap build --no-prompt || true
           
-          # أهم خطوة: البحث عن أي ملف APK في كل المجلدات ونقله للواجهة
-          echo "Searching for APK files..."
-          find . -name "*.apk" -exec cp {} ../AbuZahra_App.apk \;
+          # فحص إذا تم إنشاء ملفات (للتأكد)
+          ls -R
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Final-Android-App
-          # سنرفع الملف الذي قمنا بصيده وتغيير اسمه
-          path: AbuZahra_App.apk
+          name: AbuZahra-Final-App
+          # البحث في كل مكان عن أي ملف ينتهي بـ .apk
+          path: "**/*.apk"
           if-no-files-found: error
 
