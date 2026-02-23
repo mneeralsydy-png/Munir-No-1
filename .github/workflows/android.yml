@@ -1,5 +1,8 @@
 name: Build Android APK
-on: [push]
+
+on:
+  push:
+    branches: [ "main", "master", "Push" ] # أضفنا Push لأن هذا اسم فرعك في الصور
 
 jobs:
   build:
@@ -8,7 +11,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -19,20 +22,26 @@ jobs:
 
       - name: Build APK
         run: |
+          # الدخول للمجلد الذي يحتوي على ملفاتك (public)
           cd public
-          # أمر القوة: الرد بـ "Y" (نعم) على كل الأسئلة وتحديد مسار الـ JDK يدوياً
+          
+          # إعداد متغيرات الجافا لتجنب الأسئلة
           export JAVA_HOME=$JAVA_HOME_17_X64
+          
+          # تنفيذ الأمر مع تجاوز الأسئلة وتوليد مفتاح وهمي للبناء السريع
           yes | bubblewrap init --manifest=manifest.json --no-prompt || true
+          
+          # بناء التطبيق (استخدام حيلة الـ yes لتخطي كلمات السر)
           yes | bubblewrap build --no-prompt || true
           
-          # فحص إذا تم إنشاء ملفات (للتأكد)
-          ls -R
+          # البحث عن أي ملف apk تم إنتاجه ونقله للخارج باسم واضح
+          find . -name "*.apk" -exec mv {} ../AbuZahra_Final.apk \;
+          cd ..
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuZahra-Final-App
-          # البحث في كل مكان عن أي ملف ينتهي بـ .apk
-          path: "**/*.apk"
+          name: Abu-Zahra-Android-App
+          path: AbuZahra_Final.apk
           if-no-files-found: error
 
