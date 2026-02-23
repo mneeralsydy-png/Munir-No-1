@@ -1,4 +1,4 @@
-name: Abu Zahra App - Version 3.9.60 Victory
+name: Abu Zahra App - Version 3.9.60 Ultimate Fix
 
 on:
   push:
@@ -24,12 +24,12 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Set Version 3.9.60
+      - name: Clean & Build Capacitor
         run: |
-          # 1. تثبيت الإضافات والجسور
+          # 1. تثبيت نظيف للأدوات
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           
-          # 2. إنشاء ملف الإعدادات مع الهوية الصحيحة
+          # 2. إنشاء ملف الإعدادات يدوياً (لحل خطأ Missing appId)
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.munir.abuzahra",
@@ -38,38 +38,22 @@ jobs:
           }
           EOF
 
-          # 3. بناء منصة أندرويد
-          npx cap add android || true
+          # 3. بناء الأندرويد من الصفر
+          rm -rf android
+          npx cap add android
           
-          # 4. حقن المانيفست المطور (الأذونات + حل شاشة جوجل البيضاء)
+          # 4. حقن المانيفست (حل الأذونات والرجوع من جوجل)
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.WRITE_CONTACTS" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
               <uses-permission android:name="android.permission.INTERNET" />
-
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="Abu Zahra"
-                  android:usesCleartextTraffic="true"
-                  android:theme="@style/AppTheme">
-                  
-                  <activity
-                      android:name="com.munir.abuzahra.MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTask"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode">
-                      
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-
+              <application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="Abu Zahra" android:theme="@style/AppTheme">
+                  <activity android:name="com.munir.abuzahra.MainActivity" android:exported="true" android:launchMode="singleTask" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode">
+                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -81,11 +65,15 @@ jobs:
           </manifest>
           EOF
 
-          # 5. تحديث رقم الإصدار إلى 3.9.60 برمجياً داخل ملف build.gradle
+          # 5. ضبط رقم الإصدار 3.9.60
           sed -i 's/versionCode [0-9]*/versionCode 30960/' android/app/build.gradle
           sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' android/app/build.gradle
           
           npx cap sync android
+
+      - name: 🔥 Extract SHA-1 (VERY IMPORTANT)
+        run: |
+          cd android && ./gradlew signingReport
 
       - name: Build Final APK
         run: |
@@ -93,7 +81,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK 3.9.60
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Abu-Zahra-v3.9.60
