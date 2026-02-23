@@ -1,4 +1,4 @@
-name: Abu Zahra App - Smart Permissions Victory
+name: Abu Zahra App - Final Smart Victory
 
 on:
   push:
@@ -24,18 +24,19 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build & Smart Permissions
+      - name: Build & Fix All Issues
         run: |
-          # 1. تثبيت الإضافات (الأسماء + الهاتف + الرسائل)
+          # 1. تثبيت الإضافات وجسر الأسماء (لحل مشكلة الصورة 26)
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           
-          # 2. تهيئة المشروع
+          # 2. تهيئة التطبيق مع تحديد الهوية والاسم (لحل مشكلة الصورة 22)
           npx cap init "Abu Zahra" "com.munir.abuzahra" --web-dir public --no-confirm || true
           
-          # 3. إضافة منصة أندرويد
+          # 3. إضافة منصة أندرويد وتحديث الجسور
           npx cap add android || true
+          npx cap sync android
           
-          # 4. تعديل المانيفست ليكون "عند الطلب" فقط
+          # 4. حقن الأذونات "عند الطلب" فقط (لحل مشكلة استمرار الميكروفون)
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -68,7 +69,7 @@ jobs:
           </manifest>
           EOF
           
-          # مزامنة الجسور البرمجية
+          # مزامنة نهائية لربط جسر الأسماء بالجافا
           npx cap sync android
 
       - name: Build Final APK
@@ -77,9 +78,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload Smart APK
+      - name: Upload Success APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-Smart-Victory
+          name: Abu-Zahra-Smart-App
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
