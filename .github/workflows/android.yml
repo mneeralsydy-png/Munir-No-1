@@ -1,4 +1,4 @@
-name: Abu Zahra Pro Master 4.2.7
+name: Abu Zahra Final Fix 4.2.8
 
 on:
   push:
@@ -18,19 +18,18 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Deep Clean & Reset
+      - name: Nuclear Clean & Reset
         run: |
-          # تنظيف كامل للمكتبات والملفات المؤقتة
+          # حذف شامل للمجلدات القديمة لضمان عدم بقاء أي ترسبات برمجية
           npm install -g @capacitor/cli
           npm install @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Structural Fix - Styles & Themes
+      - name: Create Essential Resources
         run: |
-          # حل خطأ الصورة رقم 16 (Resource AppTheme.NoActionBarLauncher not found)
-          # سنقوم بإنشاء ملفات الموارد يدوياً لضمان وجودها
+          # حل خطأ الثيم المفقود (الصورة 16)
           RES_DIR="android/app/src/main/res/values"
           mkdir -p $RES_DIR
           cat <<EOF > $RES_DIR/styles.xml
@@ -47,19 +46,16 @@ jobs:
           </resources>
           EOF
 
-      - name: Structural Fix - Android Manifest
+      - name: Write Master Manifest
         run: |
-          # إعادة كتابة المانيفست بالكامل لحل مشكلة تسجيل جوجل والأذونات
-          # سيتم تضمين الـ Intent Filter المفقود واللازم لعودة المتصفح
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          cat <<EOF > $MANIFEST
+          # كتابة المانيفست لحل مشكلة جوجل والأسماء والأذونات
+          cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.WRITE_CONTACTS" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
               <application
                   android:allowBackup="true"
@@ -90,30 +86,29 @@ jobs:
           </manifest>
           EOF
 
-      - name: Dependency Engineering
+      - name: Fix Duplicate Class Conflict
         run: |
-          # حل مشكلة Duplicate Class (الصور 1-6 و 11 و 17)
-          PROPS="android/gradle.properties"
-          echo "android.useAndroidX=true" > $PROPS
-          echo "android.enableJetifier=true" >> $PROPS
+          # الجزء الأهم: القضاء على تضارب Kotlin (الصور 17 و 18)
+          GRADLE_PROPS="android/gradle.properties"
+          echo "android.useAndroidX=true" > $GRADLE_PROPS
+          echo "android.enableJetifier=true" >> $GRADLE_PROPS
+          echo "kotlin.stdlib.default.dependency=false" >> $GRADLE_PROPS
           
-          # فرض نسخة Kotlin موحدة لإنهاء صراع المكتبات نهائياً
+          # فرض نسخة موحدة لجميع المكتبات التابعة
           BUILD_GRADLE="android/build.gradle"
-          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> $BUILD_GRADLE
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.20'\n            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.20'\n            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jre7'\n            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jre8'\n        }\n    }\n}\n" >> $BUILD_GRADLE
           
-          # تحديث نسخة التطبيق
-          sed -i 's/versionCode [0-9]*/versionCode 40207/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "4.2.7"/' android/app/build.gradle
           npx cap sync android
 
-      - name: Master Build Process
+      - name: Execution & Build
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean assembleDebug -x test --no-daemon
+          # بناء APK نظيف مع تجاهل الأخطاء غير المؤثرة
+          ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload Final Success APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.7-FINAL
+          name: Abu-Zahra-v4.2.8-FINAL
           path: android/app/build/outputs/apk/debug/app-debug.apk
