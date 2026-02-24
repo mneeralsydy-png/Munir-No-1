@@ -1,4 +1,4 @@
-name: Abu Zahra Final Solution 4.2.6
+name: Abu Zahra Pro Master 4.2.7
 
 on:
   push:
@@ -18,19 +18,22 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Reset & Clean Project
+      - name: Deep Clean & Reset
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          # تنظيف كامل للمكتبات والملفات المؤقتة
+          npm install -g @capacitor/cli
+          npm install @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Create Missing Styles
+      - name: Structural Fix - Styles & Themes
         run: |
-          # هذا الجزء يحل خطأ الصورة رقم 16 عبر إنشاء الستايل المفقود يدوياً
-          VALUES_DIR="android/app/src/main/res/values"
-          mkdir -p $VALUES_DIR
-          cat <<EOF > $VALUES_DIR/styles.xml
+          # حل خطأ الصورة رقم 16 (Resource AppTheme.NoActionBarLauncher not found)
+          # سنقوم بإنشاء ملفات الموارد يدوياً لضمان وجودها
+          RES_DIR="android/app/src/main/res/values"
+          mkdir -p $RES_DIR
+          cat <<EOF > $RES_DIR/styles.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -38,17 +41,18 @@ jobs:
                   <item name="colorPrimaryDark">#303F9F</item>
                   <item name="colorAccent">#FF4081</item>
               </style>
-              <style name="AppTheme.NoActionBarLauncher" parent="AppTheme">
-                  <item name="windowActionBar">false</item>
-                  <item name="windowNoTitle">true</item>
+              <style name="AppTheme.NoActionBarLauncher" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="android:windowBackground">@null</item>
               </style>
           </resources>
           EOF
 
-      - name: Write Professional Manifest
+      - name: Structural Fix - Android Manifest
         run: |
-          # كتابة المانيفست بشكل يضمن حل مشكلة جوجل والأذونات
-          cat <<EOF > android/app/src/main/AndroidManifest.xml
+          # إعادة كتابة المانيفست بالكامل لحل مشكلة تسجيل جوجل والأذونات
+          # سيتم تضمين الـ Intent Filter المفقود واللازم لعودة المتصفح
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          cat <<EOF > $MANIFEST
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
@@ -57,7 +61,6 @@ jobs:
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
-              
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -87,26 +90,30 @@ jobs:
           </manifest>
           EOF
 
-      - name: Force Dependency Resolution
+      - name: Dependency Engineering
         run: |
-          # حل مشكلة Duplicate Class نهائياً
-          echo "android.useAndroidX=true" > android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
+          # حل مشكلة Duplicate Class (الصور 1-6 و 11 و 17)
+          PROPS="android/gradle.properties"
+          echo "android.useAndroidX=true" > $PROPS
+          echo "android.enableJetifier=true" >> $PROPS
           
-          # تحديث نسخة التطبيق لضمان التنظيف
-          sed -i 's/versionCode [0-9]*/versionCode 40206/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "4.2.6"/' android/app/build.gradle
+          # فرض نسخة Kotlin موحدة لإنهاء صراع المكتبات نهائياً
+          BUILD_GRADLE="android/build.gradle"
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> $BUILD_GRADLE
+          
+          # تحديث نسخة التطبيق
+          sed -i 's/versionCode [0-9]*/versionCode 40207/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "4.2.7"/' android/app/build.gradle
           npx cap sync android
 
-      - name: Execute Final Build
+      - name: Master Build Process
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug -x test --no-daemon
+          ./gradlew clean assembleDebug -x test --no-daemon
 
-      - name: Upload APK
+      - name: Upload Final Success APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.6-SUCCESS
+          name: Abu-Zahra-v4.2.7-FINAL
           path: android/app/build/outputs/apk/debug/app-debug.apk
