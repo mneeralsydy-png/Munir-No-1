@@ -1,4 +1,4 @@
-name: Abu Zahra Ultimate Pro Max 4.1.7
+name: Abu Zahra Pro Final 4.1.9
 
 on:
   push:
@@ -18,55 +18,47 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Full Environment Reset
+      - name: Reset & Clean Build
         run: |
-          # تنظيف شامل للملفات القديمة المسببة للتكرار
-          npm install -g @ionic/cli @capacitor/cli
-          npm install @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          npm install -g @capacitor/cli
+          npm install @capacitor/core @capacitor/android @capacitor-community/contacts @capacitor/google-auth --force
           rm -rf android
-          
-          # بناء ملف إعدادات نظيف
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Force Permissions & Version Injection
+      - name: Fix Firebase Redirect & Permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # حقن كافة الأذونات المطلوبة في الملف الأساسي
+          # إضافة الأذونات المطلوبة لضمان ظهور نوافذ "السماح"
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.SEND_SMS" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST
-
-          # ضبط الإصدار 4.1.7 لضمان التحديث
-          GRADLE="android/app/build.gradle"
-          sed -i 's/versionCode [0-9]*/versionCode 40107/' $GRADLE
-          sed -i 's/versionName "[^"]*"/versionName "4.1.7"/' $GRADLE
           
-          # تفعيل Jetifier لحل مشكلة Duplicate Class نهائياً
+          # تعديل الـ Intent Filter لضمان العودة للتطبيق بعد تسجيل الدخول عبر جوجل
+          sed -i '/<activity/a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' $MANIFEST
+
+          # تحديث رقم الإصدار إلى 4.1.9
+          GRADLE="android/app/build.gradle"
+          sed -i 's/versionCode [0-9]*/versionCode 40109/' $GRADLE
+          sed -i 's/versionName "[^"]*"/versionName "4.1.9"/' $GRADLE
+
+      - name: Resolve Duplicate Class Conflict
+        run: |
+          # القضاء على الخطأ الأحمر الذي ظهر في صور GitHub (Duplicate class)
           echo "android.useAndroidX=true" > android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx2048m" >> android/gradle.properties
-
-      - name: Advanced Dependency Resolution (The Fix)
-        run: |
-          # إجبار المشروع على استخدام إصدارات موحدة ومنع التكرار
-          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10'\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10'\n    }\n}\n" >> android/build.gradle
-          
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           npx cap sync android
 
-      - name: Professional Gradle Build
+      - name: Execute Safe Build
         run: |
           cd android
           chmod +x gradlew
-          # بناء التطبيق مع تجاهل المهام المتعارضة تماماً
-          ./gradlew clean assembleDebug -x test --no-daemon -Pandroid.plugin.validation.enabled=false
+          ./gradlew clean assembleDebug -x test --no-daemon -Dorg.gradle.project.kotlin.stdlib.default.dependency=false
 
-      - name: Upload Finished Pro APK
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.7-ULTIMATE
+          name: Abu-Zahra-v4.1.9-PRO
           path: android/app/build/outputs/apk/debug/app-debug.apk
