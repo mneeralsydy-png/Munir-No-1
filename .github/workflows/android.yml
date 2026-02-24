@@ -1,4 +1,4 @@
-name: Abu Zahra Pro Final 4.1.5
+name: Abu Zahra Final 4.1.5 Pro
 
 on:
   push:
@@ -18,34 +18,34 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Clean Environment
+      - name: Clean and Re-add Android
         run: |
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
           
-      - name: Force Permissions & Version 4.1.5
+      - name: Inject Professional Features
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # إضافة الأذونات المطلوبة (تظهر في الإعدادات وتُطلب عند التشغيل)
+          # إضافة الأذونات المطلوبة لتُطلب عند التشغيل
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.SEND_SMS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
           
-          # تحديث رقم الإصدار ليظهر 4.1.5
+          # ضبط رقم الإصدار 4.1.5
           GRADLE="android/app/build.gradle"
           sed -i 's/versionCode [0-9]*/versionCode 40105/' $GRADLE
           sed -i 's/versionName "[^"]*"/versionName "4.1.5"/' $GRADLE
           
-          # حل مشكلة Duplicate Class نهائياً عبر تعطيل استدعاء المكتبات المتعارضة
+          # الحل الجذري لمشكلة Duplicate Class (منع استدعاء stdlib المزدوج)
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           
-          # إجبار المشروع على استخدام نسخة موحدة من Kotlin
-          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
+          # فرض نسخة موحدة من Kotlin داخل ملف gradle الرئيسي
+          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'\n    }\n}\n" >> android/build.gradle
           
           npx cap sync android
 
@@ -53,11 +53,11 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          # تنظيف وبناء مع استبعاد المهام المسببة للتعارض
-          ./gradlew clean assembleDebug -x test --no-daemon
+          # أمر البناء مع استبعاد المهام المسببة للتعارض
+          ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload Final Pro APK
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.5-SUCCESS
+          name: Abu-Zahra-v4.1.5-PRO
           path: android/app/build/outputs/apk/debug/app-debug.apk
