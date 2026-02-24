@@ -1,4 +1,4 @@
-name: Abu Zahra Clean Build v3.9.60
+name: Abu Zahra Pro Build 3.9.60
 
 on:
   push:
@@ -20,39 +20,38 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android --force
-          # إنشاء ملف الإعدادات
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android || true
           
-      - name: Force Fix Kotlin Duplicate
+      - name: Inject Permissions & Version
         run: |
-          # إضافة إعدادات مباشرة في ملف gradle الخاص بالمشروع لحل مشكلة التكرار
-          echo "subprojects {
-              project.configurations.all {
-                  resolutionStrategy.eachDependency { details ->
-                      if (details.requested.group == 'org.jetbrains.kotlin') {
-                          details.useVersion '1.9.10'
-                      }
-                  }
-              }
-          }" >> android/build.gradle
+          # 1. إضافة قائمة الأذونات كاملة إلى AndroidManifest
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
+          
+          # 2. ضبط رقم الإصدار 3.9.60
+          GRADLE="android/app/build.gradle"
+          sed -i 's/versionCode [0-9]*/versionCode 30960/' $GRADLE
+          sed -i 's/versionName "[^"]*"/versionName "3.9.60"/' $GRADLE
+          
+          # 3. حل مشكلة تكرار مكتبات Kotlin
+          echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10' } }" >> android/build.gradle
           
           npx cap sync android
 
-      - name: Create Keystore
-        run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Build APK
+      - name: Build Final APK
         run: |
           cd android
           chmod +x gradlew
+          ./gradlew clean
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload Pro APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v3.9.60-Final-Fixed
+          name: Abu-Zahra-v3.9.60-PRO
           path: android/app/build/outputs/apk/debug/app-debug.apk
