@@ -1,4 +1,4 @@
-name: Abu Zahra Final Fix 4.2.8
+name: Abu Zahra Pro Internal 4.3.0
 
 on:
   push:
@@ -18,21 +18,20 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Nuclear Clean & Reset
+      - name: Reset & Install Native Plugins
         run: |
-          # حذف شامل للمجلدات القديمة لضمان عدم بقاء أي ترسبات برمجية
-          npm install -g @capacitor/cli
-          npm install @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          # تثبيت المكتبات المسؤولة عن تسجيل الدخول الداخلي (Native)
+          npm install @capacitor/cli @capacitor/core @capacitor/android --force
+          npm install @capacitor-community/contacts @codetrix-studio/capacitor-google-auth --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Create Essential Resources
+      - name: Create Native Styles
         run: |
-          # حل خطأ الثيم المفقود (الصورة 16)
-          RES_DIR="android/app/src/main/res/values"
-          mkdir -p $RES_DIR
-          cat <<EOF > $RES_DIR/styles.xml
+          VALUES_DIR="android/app/src/main/res/values"
+          mkdir -p $VALUES_DIR
+          cat <<EOF > $VALUES_DIR/styles.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -46,9 +45,9 @@ jobs:
           </resources>
           EOF
 
-      - name: Write Master Manifest
+      - name: Write Native AndroidManifest
         run: |
-          # كتابة المانيفست لحل مشكلة جوجل والأسماء والأذونات
+          # المانيفست الآن مهيأ لدعم الأذونات وتسجيل الدخول الداخلي
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -57,6 +56,8 @@ jobs:
               <uses-permission android:name="android.permission.WRITE_CONTACTS" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -64,6 +65,9 @@ jobs:
                   android:roundIcon="@mipmap/ic_launcher_round"
                   android:supportsRtl="true"
                   android:theme="@style/AppTheme">
+                  
+                  <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
+
                   <activity
                       android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
                       android:name="com.munir.abuzahra.MainActivity"
@@ -75,40 +79,33 @@ jobs:
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
-                      <intent-filter>
-                          <action android:name="android.intent.action.VIEW" />
-                          <category android:name="android.intent.category.DEFAULT" />
-                          <category android:name="android.intent.category.BROWSABLE" />
-                          <data android:scheme="com.munir.abuzahra" />
-                      </intent-filter>
                   </activity>
               </application>
           </manifest>
           EOF
 
-      - name: Fix Duplicate Class Conflict
+      - name: Fix Dependencies & Version
         run: |
-          # الجزء الأهم: القضاء على تضارب Kotlin (الصور 17 و 18)
-          GRADLE_PROPS="android/gradle.properties"
-          echo "android.useAndroidX=true" > $GRADLE_PROPS
-          echo "android.enableJetifier=true" >> $GRADLE_PROPS
-          echo "kotlin.stdlib.default.dependency=false" >> $GRADLE_PROPS
+          # القضاء على Duplicate Class المزعج
+          echo "android.useAndroidX=true" > android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           
-          # فرض نسخة موحدة لجميع المكتبات التابعة
-          BUILD_GRADLE="android/build.gradle"
-          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy {\n            force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.20'\n            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.20'\n            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jre7'\n            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jre8'\n        }\n    }\n}\n" >> $BUILD_GRADLE
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           
+          # تحديث الإصدار لـ 4.3.0
+          sed -i 's/versionCode [0-9]*/versionCode 40300/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "4.3.0"/' android/app/build.gradle
           npx cap sync android
 
-      - name: Execution & Build
+      - name: Build Pro APK
         run: |
           cd android
           chmod +x gradlew
-          # بناء APK نظيف مع تجاهل الأخطاء غير المؤثرة
           ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload APK
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.8-FINAL
+          name: Abu-Zahra-v4.3.0-NATIVE
           path: android/app/build/outputs/apk/debug/app-debug.apk
