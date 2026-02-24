@@ -1,4 +1,4 @@
-name: Abu Zahra Ultimate Pro Max 4.2.4
+name: Abu Zahra Clean Build 4.2.5
 
 on:
   push:
@@ -18,65 +18,75 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Hard Reset & Clean Install
+      - name: Reset Android Project
         run: |
-          # تنظيف جذري لضمان عدم وجود ملفات تالفة من المحاولات السابقة
-          npm install -g @capacitor/cli @capacitor/core
-          npm install @capacitor/android @capacitor-community/contacts --force
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Professional XML Engineering
+      - name: Writing Clean Manifest
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          
-          # مسح الأذونات القديمة وكتابة الأذونات الجديدة بشكل نظيف ومرتب جداً
-          # لضمان عدم حدوث خطأ "Error parsing" الذي ظهر في صورتك رقم 15
-          sed -i '/<uses-permission/d' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST
-          
-          # حقن كود العودة من جوجل (Intent Filter) لإنهاء مشكلة "Missing initial state"
-          # هذا الجزء مكتوب بشكل صلب (Hardcoded) لضمان الربط
-          sed -i '/<activity/,/<\/activity>/ { /<\/intent-filter>/ a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' -e '}' $MANIFEST
+          # هنا نقوم بكتابة الملف بالكامل لضمان عدم وجود أخطاء XML كما في الصور السابقة
+          cat <<EOF > android/app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.READ_CONTACTS" />
+              <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              <uses-permission android:name="android.permission.CALL_PHONE" />
+              
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+                      android:name="com.munir.abuzahra.MainActivity"
+                      android:label="@string/title_activity_main"
+                      android:theme="@style/AppTheme.NoActionBarLauncher"
+                      android:launchMode="singleTask"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="com.munir.abuzahra" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
-      - name: Global Dependency Lockdown
+      - name: Lock Dependencies (Fix Duplicate Class)
         run: |
-          # القضاء على خطأ Duplicate Class (الصور 10 و 11) عبر فرض نسخة موحدة من Kotlin
-          GRADLE_PROPERTIES="android/gradle.properties"
-          echo "android.useAndroidX=true" > $GRADLE_PROPERTIES
-          echo "android.enableJetifier=true" >> $GRADLE_PROPERTIES
-          echo "org.gradle.jvmargs=-Xmx4g" >> $GRADLE_PROPERTIES
-          echo "android.nonTransitiveRClass=true" >> $GRADLE_PROPERTIES
-
-          # تعديل ملف build.gradle الأساسي لإجبار النظام على استخدام مكتبات متوافقة
-          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10'\n    }\n}\n" >> android/build.gradle
-
-      - name: Version Control & App Settings
-        run: |
-          APP_GRADLE="android/app/build.gradle"
-          # تحديث الإصدار لـ 4.2.4 لضمان تجاوز الذاكرة القديمة للجوال
-          sed -i 's/versionCode [0-9]*/versionCode 40204/' $APP_GRADLE
-          sed -i 's/versionName "[^"]*"/versionName "4.2.4"/' $APP_GRADLE
+          # هذا الجزء ينهي صراع المكتبات الذي ظهر في سجلاتك السابقة
+          echo "android.useAndroidX=true" > android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           
-          # مزامنة الملفات مع الكاباسيتور
+          # تحديث نسخة التطبيق
+          sed -i 's/versionCode [0-9]*/versionCode 40205/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "4.2.5"/' android/app/build.gradle
           npx cap sync android
 
-      - name: The Nuclear Build Process
+      - name: Final Success Build
         run: |
           cd android
           chmod +x gradlew
-          # تنظيف كامل للملفات المؤقتة قبل البناء
-          ./gradlew clean
-          # بناء التطبيق مع استبعاد المهام المسببة للأخطاء
-          ./gradlew assembleDebug -x test --no-daemon -Dorg.gradle.project.kotlin.stdlib.default.dependency=false
+          ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload Finished Pro APK
+      - name: Upload Success APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.4-ULTIMATE
+          name: Abu-Zahra-v4.2.5-FIXED
           path: android/app/build/outputs/apk/debug/app-debug.apk
