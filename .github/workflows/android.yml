@@ -1,4 +1,4 @@
-name: Abu Zahra Final 4.2.0
+name: Abu Zahra Final Success 4.2.1
 
 on:
   push:
@@ -18,43 +18,47 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Clean Install
+      - name: Clean Start
         run: |
+          # مسح شامل لضمان عدم وجود ملفات XML تالفة
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Precise Manifest Injection
+      - name: Safe Manifest Update
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # إضافة الأذونات بشكل سليم تقنياً
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_CONTACTS" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
+          # إضافة الأذونات في مكانها الصحيح قبل وسم <application> وبدون تداخل
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           
-          # إضافة كود العودة من جوجل (Intent Filter) تحت الـ activity مباشرة
-          sed -i '/<activity/a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' $MANIFEST
+          # إضافة رابط العودة من جوجل (Intent Filter) بشكل دقيق جداً
+          # هذا السطر سيحل مشكلة "Missing initial state" في جوجل
+          sed -i '/<activity/,/<\/activity>/ { /<\/intent-filter>/ a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' -e '}' $MANIFEST
 
-      - name: Set Version & Fix Conflicts
+      - name: Version & Conflict Fix
         run: |
+          # تحديث الإصدار لـ 4.2.1 لضمان مسح ذاكرة الجوال القديمة
           GRADLE="android/app/build.gradle"
-          sed -i 's/versionCode [0-9]*/versionCode 40200/' $GRADLE
-          sed -i 's/versionName "[^"]*"/versionName "4.2.0"/' $GRADLE
+          sed -i 's/versionCode [0-9]*/versionCode 40201/' $GRADLE
+          sed -i 's/versionName "[^"]*"/versionName "4.2.1"/' $GRADLE
           
+          # إجبار النظام على حل تعارض المكتبات (Duplicate Class)
           echo "android.useAndroidX=true" > android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
-          
-          # توحيد المكتبات لمنع خطأ Duplicate Class
           printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           npx cap sync android
 
-      - name: Final Build
+      - name: Final Build Execution
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload APK
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.0-FIXED
+          name: Abu-Zahra-v4.2.1-FIXED
           path: android/app/build/outputs/apk/debug/app-debug.apk
