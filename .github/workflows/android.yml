@@ -1,4 +1,4 @@
-name: Abu Zahra Pro Final 4.1.9
+name: Abu Zahra Final Fix 4.1.9
 
 on:
   push:
@@ -18,47 +18,48 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Reset & Clean Build
+      - name: Reset & Clean Install
         run: |
-          npm install -g @capacitor/cli
-          npm install @capacitor/core @capacitor/android @capacitor-community/contacts @capacitor/google-auth --force
+          # تصحيح أمر التثبيت لتجنب خطأ 404 الذي ظهر في الصورة
+          npm install @capacitor/cli @capacitor/core @capacitor/android --force
+          npm install @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Fix Firebase Redirect & Permissions
+      - name: Fix Redirect & Hard Permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # إضافة الأذونات المطلوبة لضمان ظهور نوافذ "السماح"
+          # حقن الأذونات لضمان ظهور نوافذ "السماح" (ميكروفون، أسماء، هاتف)
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           
-          # تعديل الـ Intent Filter لضمان العودة للتطبيق بعد تسجيل الدخول عبر جوجل
+          # حل مشكلة العودة للتطبيق بعد تسجيل دخول جوجل (Firebase Redirect)
           sed -i '/<activity/a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' $MANIFEST
 
-          # تحديث رقم الإصدار إلى 4.1.9
+          # تحديث الإصدار لـ 4.1.9 لضمان تنظيف ذاكرة الجوال
           GRADLE="android/app/build.gradle"
           sed -i 's/versionCode [0-9]*/versionCode 40109/' $GRADLE
           sed -i 's/versionName "[^"]*"/versionName "4.1.9"/' $GRADLE
 
-      - name: Resolve Duplicate Class Conflict
+      - name: Resolve Class Conflicts
         run: |
-          # القضاء على الخطأ الأحمر الذي ظهر في صور GitHub (Duplicate class)
+          # حل مشكلة Duplicate Class التي ظهرت في صور GitHub السابقة
           echo "android.useAndroidX=true" > android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           npx cap sync android
 
-      - name: Execute Safe Build
+      - name: Execute Professional Build
         run: |
           cd android
           chmod +x gradlew
+          # بناء التطبيق مع استبعاد التعارضات المسببة للفشل
           ./gradlew clean assembleDebug -x test --no-daemon -Dorg.gradle.project.kotlin.stdlib.default.dependency=false
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.9-PRO
+          name: Abu-Zahra-v4.1.9-FINAL
           path: android/app/build/outputs/apk/debug/app-debug.apk
