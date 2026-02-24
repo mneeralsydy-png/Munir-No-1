@@ -1,4 +1,4 @@
-name: Abu Zahra Pro Build 4.1.5
+name: Abu Zahra Ultimate Pro 4.1.5
 
 on:
   push:
@@ -24,26 +24,25 @@ jobs:
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android || true
           
-      - name: Inject Pro Features & Permissions
+      - name: Inject Pro Permissions & Version
         run: |
-          # 1. إضافة كل الأذونات (أسماء، اتصال، حالة هاتف)
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # إضافة الأذونات المطلوبة لتظهر وتُطلب تلقائياً
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.SEND_SMS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
           
-          # 2. تحديث الإصدار إلى 4.1.5 (رقم الإصدار البرمجي 40105)
+          # تحديث رقم الإصدار إلى 4.1.5
           GRADLE="android/app/build.gradle"
           sed -i 's/versionCode [0-9]*/versionCode 40105/' $GRADLE
           sed -i 's/versionName "[^"]*"/versionName "4.1.5"/' $GRADLE
           
-          # 3. حل مشكلة تكرار المكتبات النهائية (Jetifier)
+          # الحل النهائي والوحيد لتجاوز خطأ Duplicate Class (الاستبعاد القسري)
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
-          
-          # توحيد إصدار Kotlin لمنع خطأ Duplicate class
-          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
+          echo "org.gradle.jvmargs=-Xmx2048m" >> android/gradle.properties
           
           npx cap sync android
 
@@ -51,10 +50,11 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug -x test --no-daemon
+          # أمر البناء السحري لتجاهل تعارض المكتبات وإتمام البناء بنجاح
+          ./gradlew assembleDebug -Dorg.gradle.project.kotlin.stdlib.default.dependency=false --no-daemon
 
-      - name: Upload Pro APK
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.5-PRO
+          name: Abu-Zahra-v4.1.5-FINAL
           path: android/app/build/outputs/apk/debug/app-debug.apk
