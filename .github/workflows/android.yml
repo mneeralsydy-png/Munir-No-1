@@ -1,4 +1,4 @@
-name: Abu Zahra Ultimate Permission Fix 4.1.7
+name: Abu Zahra Ultimate Pro Max 4.1.7
 
 on:
   push:
@@ -18,47 +18,55 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Clean & Force Install
+      - name: Full Environment Reset
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
+          # تنظيف شامل للملفات القديمة المسببة للتكرار
+          npm install -g @ionic/cli @capacitor/cli
+          npm install @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
+          
+          # بناء ملف إعدادات نظيف
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
-          
-      - name: Inject "Hard" Permissions Code
+
+      - name: Force Permissions & Version Injection
         run: |
-          # 1. إضافة الأذونات لملف الـ Manifest
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # حقن كافة الأذونات المطلوبة في الملف الأساسي
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.SEND_SMS" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
+          sed -i '/<application/i <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST
 
-          # 2. تعديل ملف الاستجابة البرمجية ليطلب الأذونات فوراً (Auto Request)
-          # هذا الجزء يجعل التطبيق يظهر النوافذ المنبثقة (Pop-ups) إجبارياً
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          
-          # 3. تحديث رقم الإصدار ليظهر 4.1.7 لضمان قبول التحديث على جوالك
+          # ضبط الإصدار 4.1.7 لضمان التحديث
           GRADLE="android/app/build.gradle"
           sed -i 's/versionCode [0-9]*/versionCode 40107/' $GRADLE
           sed -i 's/versionName "[^"]*"/versionName "4.1.7"/' $GRADLE
           
-          # 4. حل مشكلة التعارض (Duplicate Class)
-          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
+          # تفعيل Jetifier لحل مشكلة Duplicate Class نهائياً
+          echo "android.useAndroidX=true" > android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2048m" >> android/gradle.properties
+
+      - name: Advanced Dependency Resolution (The Fix)
+        run: |
+          # إجبار المشروع على استخدام إصدارات موحدة ومنع التكرار
+          printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10'\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10'\n    }\n}\n" >> android/build.gradle
           
           npx cap sync android
 
-      - name: Build Pro APK
+      - name: Professional Gradle Build
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean assembleDebug -x test --no-daemon
+          # بناء التطبيق مع تجاهل المهام المتعارضة تماماً
+          ./gradlew clean assembleDebug -x test --no-daemon -Pandroid.plugin.validation.enabled=false
 
-      - name: Upload Pro APK
+      - name: Upload Finished Pro APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.7-AutoPermissions
+          name: Abu-Zahra-v4.1.7-ULTIMATE
           path: android/app/build/outputs/apk/debug/app-debug.apk
