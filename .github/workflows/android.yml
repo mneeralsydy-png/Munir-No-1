@@ -1,4 +1,4 @@
-name: Abu Zahra Final 4.1.5 Pro
+name: Abu Zahra Final Ultimate 4.1.6
 
 on:
   push:
@@ -18,46 +18,43 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Clean and Re-add Android
+      - name: Re-build Android Clean
         run: |
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
           
-      - name: Inject Professional Features
+      - name: Inject All Permissions (Including Microphone)
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # إضافة الأذونات المطلوبة لتُطلب عند التشغيل
+          # إضافة إذن الميكروفون والأسماء وكل ما يحتاجه التطبيق
+          sed -i '/<application/i <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_CONTACTS" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           sed -i '/<application/i <uses-permission android:name="android.permission.SEND_SMS" />' $MANIFEST
-          sed -i '/<application/i <uses-permission android:name="android.permission.READ_PHONE_STATE" />' $MANIFEST
           
-          # ضبط رقم الإصدار 4.1.5
+          # تحديث الإصدار إلى 4.1.6
           GRADLE="android/app/build.gradle"
-          sed -i 's/versionCode [0-9]*/versionCode 40105/' $GRADLE
+          sed -i 's/versionCode [0-9]*/versionCode 40106/' $GRADLE
           sed -i 's/versionName "[^"]*"/versionName "4.1.5"/' $GRADLE
           
-          # الحل الجذري لمشكلة Duplicate Class (منع استدعاء stdlib المزدوج)
+          # حل مشكلة التعارض النهائية
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
-          
-          # فرض نسخة موحدة من Kotlin داخل ملف gradle الرئيسي
-          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'\n    }\n}\n" >> android/build.gradle
+          printf "allprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           
           npx cap sync android
 
-      - name: Build Pro APK
+      - name: Build Fixed APK
         run: |
           cd android
           chmod +x gradlew
-          # أمر البناء مع استبعاد المهام المسببة للتعارض
           ./gradlew assembleDebug -x test --no-daemon
 
-      - name: Upload Finished APK
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.1.5-PRO
+          name: Abu-Zahra-v4.1.6-WORKING
           path: android/app/build/outputs/apk/debug/app-debug.apk
