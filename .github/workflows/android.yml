@@ -1,4 +1,4 @@
-name: Abu Zahra Final Success 4.2.1
+name: Abu Zahra Final Fix 4.2.2
 
 on:
   push:
@@ -18,40 +18,39 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Clean Start
+      - name: Clean & Reset Android
         run: |
-          # مسح شامل لضمان عدم وجود ملفات XML تالفة
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/contacts --force
           rm -rf android
           echo '{"appId": "com.munir.abuzahra", "appName": "Abu Zahra", "webDir": "public"}' > capacitor.config.json
           npx cap add android
 
-      - name: Safe Manifest Update
+      - name: Correct Manifest Injection
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # إضافة الأذونات في مكانها الصحيح قبل وسم <application> وبدون تداخل
+          # إضافة الأذونات بشكل آمن وبسيط
           sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_CONTACTS" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
           
-          # إضافة رابط العودة من جوجل (Intent Filter) بشكل دقيق جداً
-          # هذا السطر سيحل مشكلة "Missing initial state" في جوجل
-          sed -i '/<activity/,/<\/activity>/ { /<\/intent-filter>/ a \            <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="com.munir.abuzahra" />\n            </intent-filter>' -e '}' $MANIFEST
+          # حل مشكلة العودة من جوجل (جزء Intent Filter)
+          # قمت بتبسيط الأمر لضمان عدم حدوث خطأ في الرموز
+          sed -i '/<activity/a \            <intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="com.munir.abuzahra" /></intent-filter>' $MANIFEST
 
-      - name: Version & Conflict Fix
+      - name: Versioning & Dependency Fix
         run: |
-          # تحديث الإصدار لـ 4.2.1 لضمان مسح ذاكرة الجوال القديمة
+          # تحديث الإصدار لـ 4.2.2
           GRADLE="android/app/build.gradle"
-          sed -i 's/versionCode [0-9]*/versionCode 40201/' $GRADLE
-          sed -i 's/versionName "[^"]*"/versionName "4.2.1"/' $GRADLE
+          sed -i 's/versionCode [0-9]*/versionCode 40202/' $GRADLE
+          sed -i 's/versionName "[^"]*"/versionName "4.2.2"/' $GRADLE
           
-          # إجبار النظام على حل تعارض المكتبات (Duplicate Class)
+          # القضاء على تكرار المكتبات Duplicate Class
           echo "android.useAndroidX=true" > android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           printf "\nallprojects {\n    configurations.all {\n        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'\n    }\n}\n" >> android/build.gradle
           npx cap sync android
 
-      - name: Final Build Execution
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
@@ -60,5 +59,6 @@ jobs:
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Abu-Zahra-v4.2.1-FIXED
+          name: Abu-Zahra-v4.2.2-SUCCESS
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          
