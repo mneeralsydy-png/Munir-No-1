@@ -80,4 +80,3 @@ jobs:
         with:
           name: Abu-Zahra-v4.2.4-ULTIMATE
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
